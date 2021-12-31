@@ -12,6 +12,11 @@ void handle_events(sf::RenderWindow& window)
 
 int main()
 {
+	float time = 0;
+	float timer = 0;
+	float delay = 1.0;
+	sf::Clock clock;
+
 	sf::Texture block_blue_texture;
 	sf::Texture background_texture;
 
@@ -29,6 +34,16 @@ int main()
 	{
 		handle_events(window);
 
+		time = clock.getElapsedTime().asSeconds();
+		timer = timer + time;
+		clock.restart();
+
+		if (timer > delay) {
+			block_blue_sprite.move(0, 10);
+			timer = 0;
+		}
+
+do_draw:
 		window.clear();
 		window.draw(background_sprite);
 		window.draw(block_blue_sprite);
