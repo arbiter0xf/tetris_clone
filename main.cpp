@@ -92,28 +92,41 @@ int main()
 
 	sf::Texture block_blue_texture;
 	sf::Texture block_red_texture;
+	sf::Texture block_green_texture;
+	sf::Texture block_green_texture2;
 	sf::Texture background_texture;
 
 	block_blue_texture.loadFromFile("assets/tetris_blue_block.png");
 	block_red_texture.loadFromFile("assets/tetris_red_block.png");
+	block_green_texture.loadFromFile("assets/tetris_green_block.png");
 	background_texture.loadFromFile("assets/tetris_background.png");
 
 	sf::Sprite block_blue_sprite(block_blue_texture);
 	sf::Sprite block_red_sprite(block_red_texture);
+	sf::Sprite block_green_sprite(block_green_texture);
+	sf::Sprite block_green_sprite2(block_green_texture);
 	sf::Sprite background_sprite(background_texture);
 
 	Block block_blue(0, 0, block_blue_sprite);
 	Block block_red(0, 1, block_red_sprite);
+	Block block_green(1, 0, block_green_sprite);
+	Block block_green2(1, 1, block_green_sprite);
 
 	sf::RenderWindow window(sf::VideoMode(600, 800), "Tetris clone");
 
 	block_blue.get_sprite().setScale(0.2, 0.2);
 	block_red.get_sprite().setScale(0.2, 0.2);
+	block_green.get_sprite().setScale(0.2, 0.2);
+	block_green2.get_sprite().setScale(0.2, 0.2);
 
 	block_blue.get_sprite().move(JUMP_MOVEMENT, 0);
+	block_green.get_sprite().move(0, JUMP_MOVEMENT);
+	block_green2.get_sprite().move(JUMP_MOVEMENT, JUMP_MOVEMENT);
 
 	all_blocks.push_back(&block_blue);
 	all_blocks.push_back(&block_red);
+	all_blocks.push_back(&block_green);
+	all_blocks.push_back(&block_green2);
 
 	while (window.isOpen())
 	{
