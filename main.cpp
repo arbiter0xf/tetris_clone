@@ -12,6 +12,7 @@ class Game {
 
 class Block {
 	public:
+		Block(sf::Sprite);
 		Block(int, int, sf::Sprite);
 		~Block();
 
@@ -47,6 +48,11 @@ class Shape {
 	private:
 		std::vector<Block*> blocks;
 };
+
+Block::Block(sf::Sprite _s)
+	: sprite{std::move(_s)}
+{
+}
 
 Block::Block(int _x, int _y, sf::Sprite _s)
 	: x{_x}, y{_y}, sprite{std::move(_s)}
@@ -101,6 +107,9 @@ Shape::Shape()
 
 Shape::~Shape()
 {
+	for (Block* block : blocks) {
+		delete block;
+	}
 }
 
 void Shape::draw(sf::RenderWindow& window)
@@ -137,6 +146,7 @@ void Shape::move_left()
 }
 
 Game g_game;
+std::vector<Shape*> all_shapes;
 
 void handle_events(sf::RenderWindow& window)
 {
@@ -156,22 +166,22 @@ void handle_events(sf::RenderWindow& window)
 	}
 }
 
-void do_move(float& timer, Shape& shape)
+void do_move(float& timer, Shape* shape)
 {
-	float delay = 0.2;
+	float delay = 1.0;
 
 	if (g_game.move_right) {
-		shape.move_right();
+		shape->move_right();
 		g_game.move_right = 0;
 	}
 
 	if (g_game.move_left) {
-		shape.move_left();
+		shape->move_left();
 		g_game.move_left = 0;
 	}
 
 	if (timer > delay) {
-		shape.move_down();
+		shape->move_down();
 		timer = 0;
 	}
 }
@@ -179,6 +189,36 @@ void do_move(float& timer, Shape& shape)
 #if 0
 bare_xy_to_drawable_xy()
 #endif
+
+void spawn_shape(int x, int y, sf::Texture& texture)
+{
+	const int blocks_amount = 4;
+
+	Shape* shape = new Shape();
+	sf::Sprite sprite(texture);
+	Block* new_blocks[blocks_amount];
+
+	for (int i = 0; i < blocks_amount; i++) {
+		new_blocks[i] = new Block(sprite);
+	}
+
+	new_blocks[0]->set_position(x + 0, y + 0);
+	new_blocks[1]->set_position(x + 1, y + 0);
+	new_blocks[2]->set_position(x + 0, y + 1);
+	new_blocks[3]->set_position(x + 1, y + 1);
+
+	new_blocks[0]->set_scale(0.2, 0.2);
+	new_blocks[1]->set_scale(0.2, 0.2);
+	new_blocks[2]->set_scale(0.2, 0.2);
+	new_blocks[3]->set_scale(0.2, 0.2);
+
+	shape->add_block(new_blocks[0]);
+	shape->add_block(new_blocks[1]);
+	shape->add_block(new_blocks[2]);
+	shape->add_block(new_blocks[3]);
+
+	all_shapes.push_back(shape);
+}
 
 int main()
 {
@@ -196,8 +236,6 @@ int main()
 	roof.setFillColor(sf::Color::Black);
 	roof.setPosition(BLOCK_LEN, BLOCK_LEN);
 
-	Shape shape;
-
 	sf::Texture block_blue_texture;
 	sf::Texture block_red_texture;
 	sf::Texture block_green_texture;
@@ -209,33 +247,11 @@ int main()
 	block_green_texture.loadFromFile("assets/tetris_green_block.png");
 	background_texture.loadFromFile("assets/tetris_background.png");
 
-	sf::Sprite block_blue_sprite(block_blue_texture);
-	sf::Sprite block_red_sprite(block_red_texture);
-	sf::Sprite block_green_sprite(block_green_texture);
-	sf::Sprite block_green_sprite2(block_green_texture);
 	sf::Sprite background_sprite(background_texture);
-
-	Block block_blue(0, 0, block_blue_sprite);
-	Block block_red(0, 1, block_red_sprite);
-	Block block_green(1, 0, block_green_sprite);
-	Block block_green2(1, 1, block_green_sprite);
 
 	sf::RenderWindow window(sf::VideoMode(600, 800), "Tetris clone");
 
-	block_blue.set_scale(0.2, 0.2);
-	block_red.set_scale(0.2, 0.2);
-	block_green.set_scale(0.2, 0.2);
-	block_green2.set_scale(0.2, 0.2);
-
-	block_red.set_position(0, 0);
-	block_blue.set_position(1, 0);
-	block_green.set_position(0, 1);
-	block_green2.set_position(1, 1);
-
-	shape.add_block(&block_blue);
-	shape.add_block(&block_red);
-	shape.add_block(&block_green);
-	shape.add_block(&block_green2);
+	spawn_shape(1, 1, block_blue_texture);
 
 	while (window.isOpen())
 	{
@@ -245,7 +261,9 @@ int main()
 		timer = timer + time;
 		clock.restart();
 
-		do_move(timer, shape);
+		for (Shape* shape : all_shapes) {
+			do_move(timer, shape);
+		}
 
 		g_game.move_right = 0;
 		g_game.move_left = 0;
@@ -255,8 +273,14 @@ do_draw:
 		window.draw(background_sprite);
 		window.draw(floor);
 		window.draw(roof);
-		shape.draw(window);
+		for (Shape* shape : all_shapes) {
+			shape->draw(window);
+		}
 		window.display();
+	}
+
+	for (Shape* shape : all_shapes) {
+		delete shape;
 	}
 
 	return 0;
