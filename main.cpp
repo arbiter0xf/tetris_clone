@@ -19,6 +19,10 @@ class Block {
 		void set_scale(float, float);
 		void set_position(float posX, float posY);
 
+		void move_down();
+		void move_right();
+		void move_left();
+
 	private:
 		sf::Sprite sprite;
 
@@ -48,6 +52,21 @@ void Block::set_position(float posX, float posY)
 	sprite.setPosition(posX, posY);
 }
 
+void Block::move_down()
+{
+	sprite.move(0, JUMP_MOVEMENT);
+}
+
+void Block::move_right()
+{
+	sprite.move(JUMP_MOVEMENT, 0);
+}
+
+void Block::move_left()
+{
+	sprite.move(-(JUMP_MOVEMENT), 0);
+}
+
 class Shape {
 	public:
 		Shape();
@@ -66,9 +85,9 @@ void handle_events(sf::RenderWindow& window)
 			window.close();
 
 		if (sf::Event::KeyPressed == event.type) {
-			if (sf::Keyboard::Right) {
+			if (sf::Keyboard::Right == event.key.code) {
 				g_game.move_right = 1;
-			} else if (sf::Keyboard::Left) {
+			} else if (sf::Keyboard::Left == event.key.code) {
 				g_game.move_left = 1;
 			}
 		}
@@ -79,11 +98,27 @@ void do_move(float& timer, std::vector<Block*>& all_blocks)
 {
 	float delay = 1.0;
 
+	if (g_game.move_right) {
+		for (Block* block : all_blocks) {
+			block->move_right();
+		}
+
+		g_game.move_right = 0;
+	}
+
+	if (g_game.move_left) {
+		for (Block* block : all_blocks) {
+			block->move_left();
+		}
+
+		g_game.move_left = 0;
+	}
+
 	if (timer > delay) {
 		// TODO wrap move so that sprite x/y is updated at the
 		// same time as "bare" x/y.
 		for (Block* block : all_blocks) {
-			block->get_sprite().move(0, JUMP_MOVEMENT);
+			block->move_down();
 		}
 
 		timer = 0;
