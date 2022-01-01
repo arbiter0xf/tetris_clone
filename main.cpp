@@ -2,7 +2,7 @@
 #include <vector>
 
 // Block is 256 pixels in height and scaled down by 0.2.
-#define JUMP_MOVEMENT 51.2
+#define BLOCK_LEN 51.2
 
 class Game {
 	public:
@@ -54,17 +54,17 @@ void Block::set_position(float posX, float posY)
 
 void Block::move_down()
 {
-	sprite.move(0, JUMP_MOVEMENT);
+	sprite.move(0, BLOCK_LEN);
 }
 
 void Block::move_right()
 {
-	sprite.move(JUMP_MOVEMENT, 0);
+	sprite.move(BLOCK_LEN, 0);
 }
 
 void Block::move_left()
 {
-	sprite.move(-(JUMP_MOVEMENT), 0);
+	sprite.move(-(BLOCK_LEN), 0);
 }
 
 class Shape {
@@ -96,7 +96,7 @@ void handle_events(sf::RenderWindow& window)
 
 void do_move(float& timer, std::vector<Block*>& all_blocks)
 {
-	float delay = 1.0;
+	float delay = 0.2;
 
 	if (g_game.move_right) {
 		for (Block* block : all_blocks) {
@@ -135,6 +135,16 @@ int main()
 	float timer = 0;
 	sf::Clock clock;
 
+	sf::RectangleShape floor;
+	floor.setSize(sf::Vector2f(BLOCK_LEN * 10, 10));
+	floor.setFillColor(sf::Color::Black);
+	floor.setPosition(BLOCK_LEN, BLOCK_LEN * 14);
+
+	sf::RectangleShape roof;
+	roof.setSize(sf::Vector2f(BLOCK_LEN * 10, 10));
+	roof.setFillColor(sf::Color::Black);
+	roof.setPosition(BLOCK_LEN, BLOCK_LEN);
+
 	std::vector<Block*> all_blocks;
 
 	sf::Texture block_blue_texture;
@@ -167,9 +177,9 @@ int main()
 	block_green2.set_scale(0.2, 0.2);
 
 	block_red.set_position(0, 0);
-	block_blue.set_position(JUMP_MOVEMENT, 0);
-	block_green.set_position(0, JUMP_MOVEMENT);
-	block_green2.set_position(JUMP_MOVEMENT, JUMP_MOVEMENT);
+	block_blue.set_position(BLOCK_LEN, 0);
+	block_green.set_position(0, BLOCK_LEN);
+	block_green2.set_position(BLOCK_LEN, BLOCK_LEN);
 
 	all_blocks.push_back(&block_blue);
 	all_blocks.push_back(&block_red);
@@ -192,6 +202,8 @@ int main()
 do_draw:
 		window.clear();
 		window.draw(background_sprite);
+		window.draw(floor);
+		window.draw(roof);
 		for (Block* block : all_blocks) {
 			window.draw(block->get_sprite());
 		}
