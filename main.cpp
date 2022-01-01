@@ -28,6 +28,8 @@ class Block {
 
 		int x;
 		int y;
+
+		void update_sprite_position(void);
 };
 
 class Shape {
@@ -65,25 +67,32 @@ void Block::set_scale(float scaleX, float scaleY)
 
 void Block::set_position(float posX, float posY)
 {
-	sprite.setPosition(posX, posY);
+	x = posX;
+	y = posY;
+	update_sprite_position();
 }
 
 void Block::move_down()
 {
-	// TODO Update "bare" x/y in addition to updating Sprite x/y
-	sprite.move(0, BLOCK_LEN);
+	y = y + 1;
+	update_sprite_position();
 }
 
 void Block::move_right()
 {
-	// TODO Update "bare" x/y in addition to updating Sprite x/y
-	sprite.move(BLOCK_LEN, 0);
+	x = x + 1;
+	update_sprite_position();
 }
 
 void Block::move_left()
 {
-	// TODO Update "bare" x/y in addition to updating Sprite x/y
-	sprite.move(-(BLOCK_LEN), 0);
+	x = x - 1;
+	update_sprite_position();
+}
+
+void Block::update_sprite_position(void)
+{
+	sprite.setPosition(x * BLOCK_LEN, y * BLOCK_LEN);
 }
 
 Shape::Shape()
@@ -219,9 +228,9 @@ int main()
 	block_green2.set_scale(0.2, 0.2);
 
 	block_red.set_position(0, 0);
-	block_blue.set_position(BLOCK_LEN, 0);
-	block_green.set_position(0, BLOCK_LEN);
-	block_green2.set_position(BLOCK_LEN, BLOCK_LEN);
+	block_blue.set_position(1, 0);
+	block_green.set_position(0, 1);
+	block_green2.set_position(1, 1);
 
 	shape.add_block(&block_blue);
 	shape.add_block(&block_red);
