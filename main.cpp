@@ -30,6 +30,22 @@ class Block {
 		int y;
 };
 
+class Shape {
+	public:
+		Shape();
+		~Shape();
+
+		void add_block(Block* _block);
+		void draw(sf::RenderWindow& window);
+
+		void move_down();
+		void move_right();
+		void move_left();
+
+	private:
+		std::vector<Block*> blocks;
+};
+
 Block::Block(int _x, int _y, sf::Sprite _s)
 	: x{_x}, y{_y}, sprite{std::move(_s)}
 {}
@@ -54,25 +70,62 @@ void Block::set_position(float posX, float posY)
 
 void Block::move_down()
 {
+	// TODO Update "bare" x/y in addition to updating Sprite x/y
 	sprite.move(0, BLOCK_LEN);
 }
 
 void Block::move_right()
 {
+	// TODO Update "bare" x/y in addition to updating Sprite x/y
 	sprite.move(BLOCK_LEN, 0);
 }
 
 void Block::move_left()
 {
+	// TODO Update "bare" x/y in addition to updating Sprite x/y
 	sprite.move(-(BLOCK_LEN), 0);
 }
 
-class Shape {
-	public:
-		Shape();
-		~Shape();
-	private:
-};
+Shape::Shape()
+{
+}
+
+Shape::~Shape()
+{
+}
+
+void Shape::draw(sf::RenderWindow& window)
+{
+	for (Block* block : blocks) {
+		window.draw(block->get_sprite());
+	}
+}
+
+void Shape::add_block(Block* _block)
+{
+	blocks.push_back(_block);
+}
+
+void Shape::move_down()
+{
+	for (Block* block : blocks) {
+		block->move_down();
+	}
+}
+
+void Shape::move_right()
+{
+	for (Block* block : blocks) {
+		block->move_right();
+	}
+}
+
+void Shape::move_left()
+{
+	for (Block* block : blocks) {
+		block->move_left();
+	}
+}
 
 Game g_game;
 
@@ -94,33 +147,22 @@ void handle_events(sf::RenderWindow& window)
 	}
 }
 
-void do_move(float& timer, std::vector<Block*>& all_blocks)
+void do_move(float& timer, Shape& shape)
 {
 	float delay = 0.2;
 
 	if (g_game.move_right) {
-		for (Block* block : all_blocks) {
-			block->move_right();
-		}
-
+		shape.move_right();
 		g_game.move_right = 0;
 	}
 
 	if (g_game.move_left) {
-		for (Block* block : all_blocks) {
-			block->move_left();
-		}
-
+		shape.move_left();
 		g_game.move_left = 0;
 	}
 
 	if (timer > delay) {
-		// TODO wrap move so that sprite x/y is updated at the
-		// same time as "bare" x/y.
-		for (Block* block : all_blocks) {
-			block->move_down();
-		}
-
+		shape.move_down();
 		timer = 0;
 	}
 }
@@ -145,7 +187,7 @@ int main()
 	roof.setFillColor(sf::Color::Black);
 	roof.setPosition(BLOCK_LEN, BLOCK_LEN);
 
-	std::vector<Block*> all_blocks;
+	Shape shape;
 
 	sf::Texture block_blue_texture;
 	sf::Texture block_red_texture;
@@ -181,10 +223,10 @@ int main()
 	block_green.set_position(0, BLOCK_LEN);
 	block_green2.set_position(BLOCK_LEN, BLOCK_LEN);
 
-	all_blocks.push_back(&block_blue);
-	all_blocks.push_back(&block_red);
-	all_blocks.push_back(&block_green);
-	all_blocks.push_back(&block_green2);
+	shape.add_block(&block_blue);
+	shape.add_block(&block_red);
+	shape.add_block(&block_green);
+	shape.add_block(&block_green2);
 
 	while (window.isOpen())
 	{
@@ -194,7 +236,7 @@ int main()
 		timer = timer + time;
 		clock.restart();
 
-		do_move(timer, all_blocks);
+		do_move(timer, shape);
 
 		g_game.move_right = 0;
 		g_game.move_left = 0;
@@ -204,9 +246,7 @@ do_draw:
 		window.draw(background_sprite);
 		window.draw(floor);
 		window.draw(roof);
-		for (Block* block : all_blocks) {
-			window.draw(block->get_sprite());
-		}
+		shape.draw(window);
 		window.display();
 	}
 
