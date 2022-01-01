@@ -16,6 +16,8 @@ class Block {
 		~Block();
 
 		sf::Sprite& get_sprite(void);
+		void set_scale(float, float);
+		void set_position(float posX, float posY);
 
 	private:
 		sf::Sprite sprite;
@@ -34,6 +36,16 @@ Block::~Block()
 sf::Sprite& Block::get_sprite(void)
 {
 	return sprite;
+}
+
+void Block::set_scale(float scaleX, float scaleY)
+{
+	sprite.setScale(scaleX, scaleY);
+}
+
+void Block::set_position(float posX, float posY)
+{
+	sprite.setPosition(posX, posY);
 }
 
 class Shape {
@@ -63,7 +75,7 @@ void handle_events(sf::RenderWindow& window)
 	}
 }
 
-void do_move(float& timer, std::vector<Block*> all_blocks)
+void do_move(float& timer, std::vector<Block*>& all_blocks)
 {
 	float delay = 1.0;
 
@@ -114,14 +126,15 @@ int main()
 
 	sf::RenderWindow window(sf::VideoMode(600, 800), "Tetris clone");
 
-	block_blue.get_sprite().setScale(0.2, 0.2);
-	block_red.get_sprite().setScale(0.2, 0.2);
-	block_green.get_sprite().setScale(0.2, 0.2);
-	block_green2.get_sprite().setScale(0.2, 0.2);
+	block_blue.set_scale(0.2, 0.2);
+	block_red.set_scale(0.2, 0.2);
+	block_green.set_scale(0.2, 0.2);
+	block_green2.set_scale(0.2, 0.2);
 
-	block_blue.get_sprite().move(JUMP_MOVEMENT, 0);
-	block_green.get_sprite().move(0, JUMP_MOVEMENT);
-	block_green2.get_sprite().move(JUMP_MOVEMENT, JUMP_MOVEMENT);
+	block_red.set_position(0, 0);
+	block_blue.set_position(JUMP_MOVEMENT, 0);
+	block_green.set_position(0, JUMP_MOVEMENT);
+	block_green2.set_position(JUMP_MOVEMENT, JUMP_MOVEMENT);
 
 	all_blocks.push_back(&block_blue);
 	all_blocks.push_back(&block_red);
