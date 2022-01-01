@@ -4,11 +4,7 @@
 // Block is 256 pixels in height and scaled down by 0.2.
 #define BLOCK_LEN 51.2
 
-class Game {
-	public:
-		int move_right = 0;
-		int move_left = 0;
-};
+#define Y_FLOOR 13
 
 class Block {
 	public:
@@ -23,6 +19,9 @@ class Block {
 		void move_down();
 		void move_right();
 		void move_left();
+
+		bool down_is_legal_move(void);
+		bool is_floor_level(void);
 
 	private:
 		sf::Sprite sprite;
@@ -45,8 +44,18 @@ class Shape {
 		void move_right();
 		void move_left();
 
+		bool down_is_legal_move(void);
+		bool is_floor_level(void);
+
 	private:
 		std::vector<Block*> blocks;
+};
+
+class Game {
+	public:
+		int move_right = 0;
+		int move_left = 0;
+		int pending_shape_spawn = 0;
 };
 
 Block::Block(sf::Sprite _s)
@@ -101,6 +110,11 @@ void Block::update_sprite_position(void)
 	sprite.setPosition(x * BLOCK_LEN, y * BLOCK_LEN);
 }
 
+bool Block::is_floor_level(void)
+{
+	return y == Y_FLOOR;
+}
+
 Shape::Shape()
 {
 }
@@ -145,6 +159,26 @@ void Shape::move_left()
 	}
 }
 
+bool Shape::down_is_legal_move(void)
+{
+	return true;
+}
+
+bool Shape::is_floor_level(void)
+{
+	bool floor_level = false;
+
+	for (Block* block : blocks) {
+		floor_level = block->is_floor_level();
+
+		if (floor_level) {
+			return floor_level;
+		}
+	}
+
+	return floor_level;
+}
+
 Game g_game;
 std::vector<Shape*> all_shapes;
 
@@ -181,6 +215,17 @@ void do_move(float& timer, Shape* shape)
 	}
 
 	if (timer > delay) {
+		if (shape->is_floor_level()) {
+			// Stop movement and spawn next shape
+			g_game.pending_shape_spawn = 1;
+			return;
+		}
+
+		if (!shape->down_is_legal_move()) {
+			// Stop movement and spawn next shape
+			return;
+		}
+
 		shape->move_down();
 		timer = 0;
 	}
@@ -190,7 +235,7 @@ void do_move(float& timer, Shape* shape)
 bare_xy_to_drawable_xy()
 #endif
 
-void spawn_shape(int x, int y, sf::Texture& texture)
+Shape* spawn_shape(int x, int y, sf::Texture& texture)
 {
 	const int blocks_amount = 4;
 
@@ -218,6 +263,10 @@ void spawn_shape(int x, int y, sf::Texture& texture)
 	shape->add_block(new_blocks[3]);
 
 	all_shapes.push_back(shape);
+
+	g_game.pending_shape_spawn = 0;
+
+	return shape;
 }
 
 int main()
@@ -225,6 +274,7 @@ int main()
 	float time = 0;
 	float timer = 0;
 	sf::Clock clock;
+	Shape* falling_shape;
 
 	sf::RectangleShape floor;
 	floor.setSize(sf::Vector2f(BLOCK_LEN * 10, 10));
@@ -251,7 +301,7 @@ int main()
 
 	sf::RenderWindow window(sf::VideoMode(600, 800), "Tetris clone");
 
-	spawn_shape(1, 1, block_blue_texture);
+	g_game.pending_shape_spawn = 1;
 
 	while (window.isOpen())
 	{
@@ -261,9 +311,11 @@ int main()
 		timer = timer + time;
 		clock.restart();
 
-		for (Shape* shape : all_shapes) {
-			do_move(timer, shape);
+		if (g_game.pending_shape_spawn) {
+			falling_shape = spawn_shape(1, 1, block_blue_texture);
 		}
+
+		do_move(timer, falling_shape);
 
 		g_game.move_right = 0;
 		g_game.move_left = 0;
