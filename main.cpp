@@ -1,10 +1,13 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+#define DEBUG_ON 0
+
 // Block is 256 pixels in height and scaled down by 0.2.
 #define BLOCK_LEN 51.2
 
-#define Y_FLOOR 13
+#define SLOTS_HEIGHT 13
+#define SLOTS_WIDTH 10
 
 class Block {
 	public:
@@ -22,6 +25,9 @@ class Block {
 
 		bool down_is_legal_move(void);
 		bool is_floor_level(void);
+
+		int get_x(void);
+		int get_y(void);
 
 	private:
 		sf::Sprite sprite;
@@ -47,16 +53,26 @@ class Shape {
 		bool down_is_legal_move(void);
 		bool is_floor_level(void);
 
+		void on_movement_stop(void);
+
+		std::vector<int> get_x_coords_of_blocks(void);
+		std::vector<int> get_y_coords_of_blocks(void);
+
 	private:
 		std::vector<Block*> blocks;
 };
 
 class Game {
 	public:
+		Shape* falling_shape;
+		Block* block_slots[SLOTS_WIDTH][SLOTS_HEIGHT] = {0};
 		int move_right = 0;
 		int move_left = 0;
 		int pending_shape_spawn = 0;
 };
+
+Game g_game;
+std::vector<Shape*> all_shapes; // TODO move inside Game
 
 Block::Block(sf::Sprite _s)
 	: sprite{std::move(_s)}
@@ -107,12 +123,33 @@ void Block::move_left()
 
 void Block::update_sprite_position(void)
 {
-	sprite.setPosition(x * BLOCK_LEN, y * BLOCK_LEN);
+	// Always add BLOCK_LEN to cause 0,0 to be a bit further inside the
+	// window.
+	sprite.setPosition(BLOCK_LEN + x * BLOCK_LEN, BLOCK_LEN + y * BLOCK_LEN);
 }
 
 bool Block::is_floor_level(void)
 {
-	return y == Y_FLOOR;
+	return y == SLOTS_HEIGHT - 1;
+}
+
+int Block::get_x(void)
+{
+	return x;
+}
+
+int Block::get_y(void)
+{
+	return y;
+}
+
+bool Block::down_is_legal_move(void)
+{
+	if (0 == g_game.block_slots[x][y + 1]) {
+		return true;
+	}
+
+	return false;
 }
 
 Shape::Shape()
@@ -161,6 +198,12 @@ void Shape::move_left()
 
 bool Shape::down_is_legal_move(void)
 {
+	for (Block* block : blocks) {
+		if (!block->down_is_legal_move()) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -179,8 +222,41 @@ bool Shape::is_floor_level(void)
 	return floor_level;
 }
 
-Game g_game;
-std::vector<Shape*> all_shapes;
+std::vector<int> Shape::get_x_coords_of_blocks(void)
+{
+	std::vector<int> v;
+
+	for (Block* block : blocks) {
+		v.push_back(block->get_x());
+	}
+
+	return v;
+}
+
+std::vector<int> Shape::get_y_coords_of_blocks(void)
+{
+	std::vector<int> v;
+
+	for (Block* block : blocks) {
+		v.push_back(block->get_y());
+	}
+
+	return v;
+}
+
+void Shape::on_movement_stop()
+{
+	for (Block* block : blocks) {
+		int x = block->get_x();
+		int y = block->get_y();
+
+#if DEBUG_ON
+		printf("Setting block into slot [%d][%d]\n", x, y);
+#endif
+
+		g_game.block_slots[x][y] = block;
+	}
+}
 
 void handle_events(sf::RenderWindow& window)
 {
@@ -216,13 +292,16 @@ void do_move(float& timer, Shape* shape)
 
 	if (timer > delay) {
 		if (shape->is_floor_level()) {
-			// Stop movement and spawn next shape
+			shape->on_movement_stop();
+			g_game.falling_shape = 0;
 			g_game.pending_shape_spawn = 1;
 			return;
 		}
 
 		if (!shape->down_is_legal_move()) {
-			// Stop movement and spawn next shape
+			shape->on_movement_stop();
+			g_game.falling_shape = 0;
+			g_game.pending_shape_spawn = 1;
 			return;
 		}
 
@@ -274,7 +353,6 @@ int main()
 	float time = 0;
 	float timer = 0;
 	sf::Clock clock;
-	Shape* falling_shape;
 
 	sf::RectangleShape floor;
 	floor.setSize(sf::Vector2f(BLOCK_LEN * 10, 10));
@@ -312,10 +390,10 @@ int main()
 		clock.restart();
 
 		if (g_game.pending_shape_spawn) {
-			falling_shape = spawn_shape(1, 1, block_blue_texture);
+			g_game.falling_shape = spawn_shape(0, 0, block_blue_texture);
 		}
 
-		do_move(timer, falling_shape);
+		do_move(timer, g_game.falling_shape);
 
 		g_game.move_right = 0;
 		g_game.move_left = 0;
