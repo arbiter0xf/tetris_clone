@@ -295,17 +295,19 @@ void do_move(float& timer, Shape* shape)
 			shape->on_movement_stop();
 			g_game.falling_shape = 0;
 			g_game.pending_shape_spawn = 1;
-			return;
+			goto reset_timer;
 		}
 
 		if (!shape->down_is_legal_move()) {
 			shape->on_movement_stop();
 			g_game.falling_shape = 0;
 			g_game.pending_shape_spawn = 1;
-			return;
+			goto reset_timer;
 		}
 
 		shape->move_down();
+
+reset_timer:
 		timer = 0;
 	}
 }
